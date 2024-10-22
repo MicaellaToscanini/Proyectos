@@ -1,0 +1,58 @@
+@author: Micaella
+"""
+
+
+import requests
+from bs4 import BeautifulSoup
+import json
+
+def scrape_properties(city_url):
+    properties = []
+    response = requests.get(city_url)
+    
+    if response.status_code !=200:
+        print(f"Error al acceder a {city_url}: {response.status_code}")
+        return properties
+    
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    
+    property_cards = soup.find_all('div', class_='card', limit=10)
+    
+    for card in property_cards:
+        city= "Montevideo"
+        price= card.find('div', class_='lc-price').text.strip() if card.find('div', class_='lc-price') else 'N/A'
+        size= card.find('div', class_='lc-typologyTag').text.strip() if card.find('div', class_='lc-typologyTag') else 'N/A'
+        location= card.find('strong', class_='lc-location').text.strip() if card.find('strong', class_='lc-location') else 'N/A'
+        link = card.find('0')['href'] if card.find('0') else 'N/A'
+        
+        properties.append({
+            'ciudad': city,
+            'precio': price,
+            'tamaño': size,
+            'habitaciones': location,
+            'link': link
+            })
+        
+        return properties
+    
+cities = {
+    'Montevideo': "https://inmobiliariauruguay.com/search-results/?type%5B%5D=&status%5B%5D=&states%5B%5D=montevideo",
+    'Salto': "https://inmobiliariauruguay.com/search-results/?keyword=&country%5B%5D=&states%5B%5D=salto&explotacion=&min-area=&max-area=&min-land-area=&max-land-area=&min-price=&max-price=",
+    'Paysandu':"https://inmobiliariauruguay.com/search-results/?keyword=&country%5B%5D=&states%5B%5D=paysandu&explotacion=&min-area=&max-area=&min-land-area=&max-land-area=&min-price=&max-price="
+        }
+    
+all_properties = {}
+for city, url in cities.items():
+    print(f"Scrapeando propiedades en {city}...")
+    properties = scrape_properties(url)
+    all_properties[city]= properties
+    
+    
+for city.properties in all_properties.items():
+    print (f"\nPropiedades en {city}:")
+    for prop in properties:
+        print(prop)
+        
+with open('propiedades.json', 'w', encoding='utf-8') as json_file:
+    json.dump(all_properties, json_file, ensure_ascii=False, indent=4)
